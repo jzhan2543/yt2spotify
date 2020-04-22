@@ -4,10 +4,11 @@ import requests
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
+import youtube_dl
 
 from datetime import date 
 
-from secrets import spotify_user_id, spotify_token_1, spotify_token_2
+from secrets import spotify_user_id, spotify_token_1, spotify_token_2, yt_id 
 
 class CreatePlaylist: 
 
@@ -15,13 +16,54 @@ class CreatePlaylist:
     self.user_id = spotify_user_id
     self.token = spotify_token_1
     self.token_2 = spotify_token_2 
+    self.youtube_client = self.getYT() 
+    self.all_song_info = {}
+
  
 
   def getYT(self): 
-    pass 
+    # Disable OAuthlib's HTTPS verification when running locally.
+    # *DO NOT* leave this option enabled in production.
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
+    api_service_name = "youtube"
+    api_version = "v3"
+    client_secrets_file = "client_secret.json"
+
+    # Get credentials and create an API client
+    scopes = ["https://www.googleapis.com/auth/youtube.readonly"]
+    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+      client_secrets_file, scopes)
+    credentials = flow.run_console()
+    youtube = googleapiclient.discovery.build(
+      api_service_name, api_version, credentials=credentials) 
+    return youtube 
+
+
+  #Getting Liked Videos here 
   def getLikedVideos(self): 
-    pass 
+    r = self.youtube_client.videos().list(
+      part="snippet,contentDetails,statistics",
+      myRating="like",
+      maxResults=50
+    )
+    response = r.execute() 
+    for item in response["items"]: 
+      title = item["snippet"]["title"]
+      print(title)
+      youtube_url = "https://www.youtube.com/watch?v={}".format(item["id"])
+
+      video = youtube_dl.YoutubeDL({}).extract_info(youtube_url, download=False)
+      song = video["track"]
+      artist = video["artist"]
+
+      if song is not None and artist is not None: 
+        self.all_song_info[title] = { 
+          "youtube_url" : youtube_url, 
+          "song": song, 
+          "arist": artist, 
+          "spotify_uri": self.getSpotifyURI(song, artist)
+        }
 
   def createPlaylist(self): 
     t = date.today() 
@@ -57,17 +99,44 @@ class CreatePlaylist:
       }
     )
     response_json = r.json() 
+    print(song_name)
+    print(artist)
+    print("-------")
     songs = response_json["tracks"]["items"]
 
     uri = songs[0]["uri"]
+    return uri 
 
   def addSong(self): 
-    pass
+    self.getLikedVideos() 
+    uris=[info["spotify_uri"] for song, info in self.all_song_info.items()]
+    playlist_id = self.createPlaylist() 
+    request_data = json.dumps(uris)
+
+    q = "https://api.spotify.com/v1/playlists/{}/tracks".format(playlist_id) 
+    r = requests.post(
+      q, 
+      data = request_data, 
+      headers = { 
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {}".format(self.token_2)
+      }
+    )
+    if r.status_code != 201:
+      print("Error Code: " + r.status_code)
+
+    response_json = r.json()
+    return response_json
+
 
 if __name__ == '__main__':
     # cp = CreatePlaylist()
     # cp.addSong()
     print("testing")
+    cp = CreatePlaylist()
+    cp.addSong()
+
+
     # t = date.today() 
     # datestring = t.strftime('%m/%d/%Y')
     # json_body = json.dumps({ 
