@@ -70,7 +70,7 @@ class CreatePlaylist:
     datestring = t.strftime('%m/%d/%Y')
     json_body = json.dumps({ 
       "name": "YT Liked Videos - " + datestring, 
-      "description": "YT Liked Videos from " + datestring, 
+      "description": "(automated from yt2spotify) 50 most recent YT Liked Videos - " + datestring, 
       "public": False
     })
 
@@ -130,54 +130,9 @@ class CreatePlaylist:
 
 
 if __name__ == '__main__':
-    # cp = CreatePlaylist()
-    # cp.addSong()
+
     print("testing")
     cp = CreatePlaylist()
     cp.addSong()
-
-
-    # t = date.today() 
-    # datestring = t.strftime('%m/%d/%Y')
-    # json_body = json.dumps({ 
-    #   "name": "YT Liked Videos - " + datestring, 
-    #   "description": "YT Liked Videos from " + datestring, 
-    #   "public": False
-    # })
-
-    # q = "https://api.spotify.com/v1/users/{}/playlists".format(spotify_user_id) 
-    # r = requests.post(
-    #   q, 
-    #   data = json_body, 
-    #   headers={
-    #     "Content-Type": "application/json",
-    #     "Authorization": "Bearer {}".format(spotify_token_2)
-    #   }
-    # )
-    # response_json = r.json()
-    # print(response_json)
-    # print("--------")
-    # song_name = "Suge"
-    # artist = "DaBaby"
-
-    # q =  "https://api.spotify.com/v1/search?query=track%3A{}+artist%3A{}&type=track&offset=0&limit=20".format(
-    #   song_name,
-    #   artist
-    # )
-    # r = requests.get(
-    #   q, 
-    #   headers = { 
-    #     "Content-Type": "application/json",
-    #     "Authorization": "Bearer {}".format(spotify_token_2)
-    #   }
-    # )
-    # response_json = r.json() 
-
-    # songs = response_json["tracks"]["items"]
-
-    # uri = songs[0]["uri"]
-    # print(uri)
-
-
 
     
